@@ -1,0 +1,38 @@
+# M5: thin re-export — implementation lives in fix_core.telematics
+from fix_core.telematics import (
+    TEMP_WARNING_C,
+    TEMP_CRITICAL_C,
+    VOLTAGE_WARNING_V,
+    VOLTAGE_CRITICAL_V,
+    PRESSURE_WARNING_PSI,
+    PRESSURE_CRITICAL_PSI,
+    FUEL_WARNING_PCT,
+    _SIGNAL_AFFECTS,
+    ValidationResult,
+    NormalizedSignal,
+    TelemetryPayload,
+    NormalizationResult,
+    validate_payload,
+    normalize_telemetry,
+    parse_payload,
+    describe_normalization,
+)
+
+__all__ = [
+    "TEMP_WARNING_C",
+    "TEMP_CRITICAL_C",
+    "VOLTAGE_WARNING_V",
+    "VOLTAGE_CRITICAL_V",
+    "PRESSURE_WARNING_PSI",
+    "PRESSURE_CRITICAL_PSI",
+    "FUEL_WARNING_PCT",
+    "_SIGNAL_AFFECTS",
+    "ValidationResult",
+    "NormalizedSignal",
+    "TelemetryPayload",
+    "NormalizationResult",
+    "validate_payload",
+    "normalize_telemetry",
+    "parse_payload",
+    "describe_normalization",
+]

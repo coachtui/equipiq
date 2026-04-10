@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=60"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fix-core"
+version = "0.1.0"
+description = "Platform-agnostic diagnostic engine for Fix"
+requires-python = ">=3.12"
+dependencies = [
+    "pydantic>=2.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["fix_core*"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+# Enforce: fix_core must never import sqlalchemy, fastapi, passlib, jose, or open()
+# CI lint runs: grep -r "sqlalchemy\|fastapi\|passlib\|jose" fix_core/ && exit 1

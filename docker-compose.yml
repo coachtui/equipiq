@@ -1,0 +1,55 @@
+services:
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-fixdb}
+      POSTGRES_USER: ${POSTGRES_USER:-fix}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-fix}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db/migrations:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-fix} -d ${POSTGRES_DB:-fixdb}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-fix}:${POSTGRES_PASSWORD:-fix}@db:5432/${POSTGRES_DB:-fixdb}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+      - uploads:/app/uploads
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    environment:
+      # API_URL: internal Docker network address (used by Next.js server for rewrites)
+      # NEXT_PUBLIC_API_URL is intentionally unset so browser uses relative /api/* paths
+      API_URL: http://backend:8000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend:/app
+    # npm install runs on every start — ensures node_modules is always present
+    command: sh -c "npm install && npm run dev"
+
+volumes:
+  pgdata:
+  uploads:
