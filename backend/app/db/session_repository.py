@@ -15,6 +15,13 @@ Aggregate save strategy:
 from __future__ import annotations
 
 from datetime import datetime, timezone
+
+
+def _naive_utc(dt: datetime) -> datetime:
+    """Strip tzinfo for TIMESTAMP WITHOUT TIME ZONE columns."""
+    if dt is None:
+        return dt
+    return dt.astimezone(timezone.utc).replace(tzinfo=None)
 from uuid import UUID
 
 from sqlalchemy import delete, insert, select
@@ -205,8 +212,8 @@ class PostgresSessionRepository:
             .values(
                 id=str(session.id),
                 user_id=str(session.owner.user_id),
-                created_at=session.created_at,
-                updated_at=session.updated_at,
+                created_at=_naive_utc(session.created_at),
+                updated_at=_naive_utc(session.updated_at),
                 status=status_str,
                 turn_count=session.turn_count,
                 vehicle_year=session.vehicle_year,
@@ -271,7 +278,7 @@ class PostgresSessionRepository:
                 .values(
                     id=str(msg.id),
                     session_id=str(session.id),
-                    created_at=msg.created_at,
+                    created_at=_naive_utc(msg.created_at),
                     role=msg.role.value,
                     content=msg.content,
                     msg_type=msg.msg_type.value,
@@ -287,7 +294,7 @@ class PostgresSessionRepository:
                 .values(
                     id=str(session.result.id),
                     session_id=str(session.id),
-                    created_at=session.result.created_at,
+                    created_at=_naive_utc(session.result.created_at),
                     ranked_causes=serialised_causes,
                     next_checks=session.result.next_checks,
                     diy_difficulty=session.result.diy_difficulty,
