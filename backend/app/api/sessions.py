@@ -917,10 +917,10 @@ async def send_message(
     # ── Clarification needed ──────────────────────────────────────────────────
     if orch_result.action == "clarify":
         if orch_result.contradictions:
-            c = orch_result.contradictions[0]
             clarify_msg = (
-                f"I'm seeing some conflicting information. {c.description}. "
-                "Could you clarify what you observed?"
+                "A couple of your answers are pointing in different directions — "
+                "I want to make sure I understand the situation correctly before going further. "
+                "Could you walk me through what you observed, step by step?"
             )
         else:
             clarify_msg = "Could you describe that a bit more specifically so I can give you the most accurate diagnosis?"

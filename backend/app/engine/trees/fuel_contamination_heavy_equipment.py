@@ -134,6 +134,71 @@ FUEL_CONTAMINATION_HEAVY_EQUIPMENT_TREE: dict[str, dict] = {
                 "eliminate": ["diesel_bug", "wrong_fuel", "def_in_diesel"],
                 "next_node": "fuel_appearance",
             },
+            {
+                "match": "rain_or_storm_exposure",
+                "label": "Problems started after heavy rain, flooding, or storm — machine may have been exposed to water",
+                "deltas": {
+                    "water_in_fuel": +0.30,
+                    "wrong_fuel": -0.20,
+                    "fuel_wax": -0.15,
+                    "def_in_diesel": -0.10,
+                    "fuel_oxidation": -0.05,
+                },
+                "eliminate": ["fuel_wax", "def_in_diesel"],
+                "next_node": "rain_confirmation",
+            },
+        ],
+    },
+
+    "rain_confirmation": {
+        "question": (
+            "A few quick checks on the water ingress path. "
+            "Was the machine sitting outside unprotected during or after the storm? "
+            "Have you inspected the fuel cap and its rubber seal for damage? "
+            "And have you checked the water separator — is there visible water in it?"
+        ),
+        "options": [
+            {
+                "match": "outside_separator_wet",
+                "label": "Yes — machine was outside during the storm, and the water separator is full or shows visible water",
+                "deltas": {
+                    "water_in_fuel": +0.35,
+                    "wrong_fuel": -0.20,
+                    "diesel_bug": +0.05,
+                },
+                "eliminate": ["wrong_fuel", "fuel_wax", "def_in_diesel"],
+                "next_node": "fuel_source",
+            },
+            {
+                "match": "outside_cap_damaged",
+                "label": "Machine was outside and the fuel cap or its seal looks damaged or wasn't fully closed",
+                "deltas": {
+                    "water_in_fuel": +0.35,
+                    "wrong_fuel": -0.20,
+                    "diesel_bug": +0.05,
+                },
+                "eliminate": ["wrong_fuel", "fuel_wax", "def_in_diesel"],
+                "next_node": "fuel_source",
+            },
+            {
+                "match": "outside_separator_not_checked",
+                "label": "Machine was outside during the storm but the separator has not been checked yet",
+                "deltas": {
+                    "water_in_fuel": +0.20,
+                    "wrong_fuel": -0.10,
+                },
+                "eliminate": ["fuel_wax", "def_in_diesel"],
+                "next_node": "fuel_appearance",
+            },
+            {
+                "match": "sheltered_or_uncertain",
+                "label": "Machine was sheltered or covered, or storm exposure is uncertain",
+                "deltas": {
+                    "water_in_fuel": +0.10,
+                },
+                "eliminate": [],
+                "next_node": "fuel_appearance",
+            },
         ],
     },
 
@@ -217,9 +282,9 @@ FUEL_CONTAMINATION_HEAVY_EQUIPMENT_TREE: dict[str, dict] = {
                 "match": "bulk_storage_tank",
                 "label": "Fuelled from a bulk storage tank on site",
                 "deltas": {
-                    "water_in_fuel": +0.15,
-                    "diesel_bug": +0.15,
-                    "sediment_contamination": +0.15,
+                    "water_in_fuel": +0.22,
+                    "diesel_bug": +0.20,
+                    "sediment_contamination": +0.18,
                 },
                 "eliminate": ["wrong_fuel"],
                 "next_node": None,
@@ -228,8 +293,7 @@ FUEL_CONTAMINATION_HEAVY_EQUIPMENT_TREE: dict[str, dict] = {
                 "match": "retail_pump_recent",
                 "label": "Recently fuelled from a retail pump or delivery truck",
                 "deltas": {
-                    "wrong_fuel": +0.10,
-                    "water_in_fuel": +0.05,
+                    "water_in_fuel": +0.03,
                 },
                 "eliminate": ["diesel_bug", "fuel_oxidation"],
                 "next_node": None,
@@ -251,6 +315,7 @@ FUEL_CONTAMINATION_HEAVY_EQUIPMENT_CONTEXT_PRIORS: dict = {
         "muddy": {"water_in_fuel": +0.08, "sediment_contamination": +0.05},
         "marine": {"water_in_fuel": +0.12, "diesel_bug": +0.08},
         "urban": {},
+        "wet_outdoor": {"water_in_fuel": +0.18, "wrong_fuel": -0.08, "diesel_bug": +0.05},
     },
     "hours_band": {
         "long_storage": {
@@ -271,4 +336,6 @@ FUEL_CONTAMINATION_HEAVY_EQUIPMENT_POST_DIAGNOSIS: list[str] = [
     "Diesel bug remediation: drain contaminated fuel, clean the tank interior, treat with biocide (e.g. Biobor JF), replace all fuel filters, then refuel with fresh diesel. Prevention: keep fuel tanks as full as possible to reduce condensation air space.",
     "Oxidized fuel: gums and varnish from degraded diesel can coat injector nozzles. After remediation, consider an injector cleaner additive for the first 2–3 fill-ups.",
     "Bulk storage tanks: check for water at the bottom of the storage tank annually using water-finding paste on a dipstick — water always sinks to the bottom and accumulates over time.",
+    "Storm / rain water ingress: if the machine has NOT been restarted since water contamination was discovered — do not attempt to start it. Running a diesel injection system with significant water in the fuel can destroy injectors and the injection pump within seconds. Drain the water separator completely, replace the primary fuel filter, then drain and inspect the tank before attempting to restart.",
+    "After storm exposure: check the fuel cap O-ring and cap seal for cracks or deformation — this is the most common water ingress point on outdoor equipment. Replace the cap seal as a matter of course after any flooding event.",
 ]
