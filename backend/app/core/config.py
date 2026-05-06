@@ -32,6 +32,26 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 15
     refresh_token_expire_days: int = 7
 
+    # Partner API keys — comma-separated "partner_id:secret_key" pairs.
+    # Trusted external platforms (BedrockOS, etc.) send X-Partner-Key with the
+    # secret; Fix matches it to a partner_id and provisions/looks up the user
+    # via X-Partner-User-Id. Example: "bedrock:abc123,othercp:xyz789"
+    partner_api_keys: str = ""
+
+    @property
+    def partner_keys_map(self) -> dict[str, str]:
+        """Returns {secret_key: partner_id} for fast reverse lookup."""
+        result: dict[str, str] = {}
+        for entry in self.partner_api_keys.split(","):
+            entry = entry.strip()
+            if not entry or ":" not in entry:
+                continue
+            partner_id, secret = entry.split(":", 1)
+            partner_id, secret = partner_id.strip(), secret.strip()
+            if partner_id and secret:
+                result[secret] = partner_id
+        return result
+
     class Config:
         env_file = ".env"
 

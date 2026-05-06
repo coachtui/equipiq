@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional
 from uuid import uuid4
 
 from sqlalchemy import Boolean, Text
@@ -14,8 +15,12 @@ class User(Base):
 
     id: Mapped[str] = mapped_column(UUID(as_uuid=False), primary_key=True, default=lambda: str(uuid4()))
     email: Mapped[str] = mapped_column(Text, unique=True, nullable=False)
-    password_hash: Mapped[str] = mapped_column(Text, nullable=False)
+    password_hash: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     is_admin: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     is_operator: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    # Partner auth — set when user was provisioned via partner API instead of Fix's own signup
+    partner_id:      Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    partner_user_id: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    partner_org_id:  Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(server_default=func.now(), onupdate=func.now())
