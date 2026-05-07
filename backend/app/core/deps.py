@@ -57,18 +57,36 @@ async def _resolve_partner_user(request: Request) -> Optional[CurrentUser]:
         user = result.scalar_one_or_none()
 
         if user is None:
-            # Synthesize an email so the NOT NULL + unique constraint stays happy
             synthetic_email = external_email or f"{external_user_id}@{partner_id}.partner.local"
-            user = User(
-                email=synthetic_email,
-                password_hash=None,
-                partner_id=partner_id,
-                partner_user_id=external_user_id,
-                partner_org_id=external_org_id,
+
+            # If a native Fix user already exists with this email (e.g. they signed
+            # up directly before partner integration was wired), link the partner
+            # identity to that account instead of inserting a duplicate row —
+            # otherwise the unique email constraint blows up with a 500.
+            existing_by_email = await db.execute(
+                select(User).where(User.email == synthetic_email)
             )
-            db.add(user)
-            await db.commit()
-            await db.refresh(user)
+            existing = existing_by_email.scalar_one_or_none()
+
+            if existing is not None:
+                existing.partner_id = partner_id
+                existing.partner_user_id = external_user_id
+                if external_org_id:
+                    existing.partner_org_id = external_org_id
+                await db.commit()
+                await db.refresh(existing)
+                user = existing
+            else:
+                user = User(
+                    email=synthetic_email,
+                    password_hash=None,
+                    partner_id=partner_id,
+                    partner_user_id=external_user_id,
+                    partner_org_id=external_org_id,
+                )
+                db.add(user)
+                await db.commit()
+                await db.refresh(user)
         elif external_org_id and user.partner_org_id != external_org_id:
             # Org may have changed — keep it in sync
             user.partner_org_id = external_org_id
