@@ -839,14 +839,35 @@ async def send_message(
     current_node = core_session.current_node_id or "start"
     node = engine.get_node(current_node)
 
-    # classify_answer via ClaudeProvider — returns AnswerClassification model
-    classify_result_model = await _provider.classify_answer(
-        question=node["question"],
-        options=node["options"],   # list[dict] at runtime — ClaudeProvider forwards to claude.py
-        user_answer=req.content,
-        hypotheses=[],             # interface param; not used by claude.py
-    )
-    classify_result = classify_result_model.model_dump()  # dict for process_message()
+    # Resolve pure numeric selections (e.g. "1") directly to match_key.
+    # The UI renders options as numbered choices but match_keys are descriptive strings;
+    # passing a bare number to classify_answer fails key validation and forces
+    # answer_reliability to 0.3, which always triggers clarification.
+    _node_options = node.get("options", [])
+    _numeric_match = None
+    try:
+        _idx = int(req.content.strip()) - 1
+        if 0 <= _idx < len(_node_options):
+            _numeric_match = _node_options[_idx]
+    except (ValueError, TypeError):
+        pass
+
+    if _numeric_match:
+        classify_result = {
+            "option_key": _numeric_match["match"],
+            "classification_confidence": 1.0,
+            "answer_reliability": 1.0,
+            "needs_clarification": False,
+        }
+    else:
+        # classify_answer via ClaudeProvider — returns AnswerClassification model
+        classify_result_model = await _provider.classify_answer(
+            question=node["question"],
+            options=node["options"],   # list[dict] at runtime — ClaudeProvider forwards to claude.py
+            user_answer=req.content,
+            hypotheses=[],             # interface param; not used by claude.py
+        )
+        classify_result = classify_result_model.model_dump()  # dict for process_message()
     matched_key = classify_result["option_key"]
 
     # Run orchestrator
