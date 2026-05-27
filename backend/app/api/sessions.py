@@ -911,10 +911,10 @@ async def send_message(
     ]
 
     next_node = orch_result.next_node_id
-    core_session.current_node_id = next_node
     core_session.turn_count = turn
 
     # ── Clarification needed ──────────────────────────────────────────────────
+    # Do NOT advance current_node_id here — user must re-answer the same node.
     if orch_result.action == "clarify":
         if orch_result.contradictions:
             clarify_msg = (
@@ -934,6 +934,9 @@ async def send_message(
             msg_type="clarify",
             turn=turn,
         )
+
+    # Advance node only when not clarifying — clarify keeps session on the same node
+    core_session.current_node_id = next_node
 
     if turn >= settings.max_turns:
         orch_result.action = "exit"
